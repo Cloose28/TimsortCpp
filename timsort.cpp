@@ -21,7 +21,8 @@ private:
             r |= n & 1;
             n >>= 1;
         }
-        return n + r;
+        //n + r
+        return 5;
     }
 
     void createAndFillIndexes() {
@@ -45,12 +46,12 @@ private:
 
         int currentPoint = addNewSection(0);
         runSizes.push_back(currentPoint);
-        while (currentPoint + 2 < n) {
+        while (currentPoint + 1 < n) {
             int startPoint = currentPoint;
             currentPoint = addNewSection(currentPoint);
             runSizes.push_back(currentPoint - startPoint + 1);
         }
-        if (currentPoint + 1 < n) {
+        if (currentPoint < n) {
             runSizes.push_back(1);
         }
     }
@@ -74,7 +75,7 @@ private:
 
     int pourTheEnd(int start, int currentEnd) {
         if ((currentEnd - start + 1) < minrun) {
-            while ((start - currentEnd + 1) != minrun && currentEnd + 1 < n) {
+            while ((currentEnd - start + 1) != minrun && currentEnd + 1 < n) {
                 ++currentEnd;
             }
             insertionSort(start, currentEnd);
@@ -112,22 +113,67 @@ private:
     void mergeSort() {
         if (runSizes.size() < 2) return;
         std::vector<RUN> runs = getStackForMerge();
-        for (int i = 0; i < runs.size() - 1; ++i) {
-            RUN first = getMin(runs, runs[0].runSize);
+        while (runs.size() > 2) {
+            if (runs[0].runSize > (runs[1].runSize + runs[2].runSize) && (runs[1].runSize > runs[2].runSize)) {
+                mergeTwoSection(runs[0], runs[1]);
+                runs[0].runSize += runs[1].runSize;
+                //todo check valid
+                runs.erase(runs.begin() + 1);
+            } else {
+                mergeTwoSection(runs[1], getMin(runs[0], runs[2]));
+                if (runs[0].runSize > runs[2].runSize) {
+                    runs.erase(runs.begin() + 2);
+                } else {
+                    runs.erase(runs.begin() + 1);
+                }
+            }
         }
-
-
+        mergeTwoSection(runs[0], runs[1]);
     }
 
-    RUN getMin(std::vector<RUN> runs, int currentMin) {
-        return runs[0];
+    RUN getMin(RUN p1, RUN p2) {
+        return p1.runSize > p2.runSize ? p2 : p1;
     }
 
-    void mergeTwoSection(RUN p1, RUN p2){
-
+    void mergeTwoSection(RUN p1, RUN p2) {
+        if (p1.startInArray > p2.startInArray) {
+            RUN tmp = p1;
+            p1 = p2;
+            p2 = tmp;
+        }
+        int *tempIndexses = new int[p1.runSize];
+        for (int i = p1.startInArray, j = 0; i < p1.runSize; ++i, ++j) {
+            tempIndexses[j] = indexes[i];
+        }
+        int i = 0, j = p2.startInArray, k = p1.startInArray;
+        while (i < p1.runSize && j < (p2.startInArray + p2.runSize)) {
+            int compr = compare(tempIndexses[i], indexes[j]);
+            switch (compr) {
+                case 1:
+                    indexes[k] = j;
+                    ++j;
+                    break;
+                case -1:
+                    indexes[k] = tempIndexses[i];
+                    ++i;
+                    break;
+                case 0:
+                    indexes[k++] = j;
+                    indexes[k] = tempIndexses[i];
+                    ++i;
+                    ++j;
+            }
+            ++k;
+        }
+        while (i < p1.runSize) {
+            indexes[k++] = tempIndexses[i++];
+        }
+        while (j < (p2.startInArray + p2.runSize)) {
+            indexes[k++] = j++;
+        }
     }
 
-    std::vector<RUN> getStackForMerge(){
+    std::vector<RUN> getStackForMerge() {
         std::vector<RUN> runs;
         int start = 0;
         for (int i = 0; i < runSizes.size(); ++i) {
@@ -151,7 +197,7 @@ public:
         createAndFillIndexes();
         minrun = getMinrun(n);
         defineRunSizes();
-        mergeSort();
+//        mergeSort();
 
         return indexes;
     }
@@ -168,10 +214,22 @@ public:
     intTimsort(int n, int *array) : n(n), array(array) {}
 
     int compare(int i1, int i2) override {
-        if (i1 == i2)
-            return 0;
+        if (i1 == i2) return 0;
+        if (array[i1] == array[i2]) return 0;
         return array[i1] < array[i2] ? -1 : 1;
     }
 };
 
+class doubleTimsort : public Timsort {
+private:
+    int n;
+    double *array;
+public:
+    doubleTimsort(int n, double *array) : n(n), array(array) {}
 
+    int compare(int i1, int i2) override {
+        if (i1 == i2) return 0;
+        if ((array[i1] - array[i2]) < 0.000001) return 0;
+        return array[i1] < array[i2] ? -1 : 1;
+    }
+};
