@@ -22,7 +22,7 @@ private:
             n >>= 1;
         }
         //n + r
-        return 5;
+        return 2;
     }
 
     void createAndFillIndexes() {
@@ -49,7 +49,7 @@ private:
         while (currentPoint + 1 < n) {
             int startPoint = currentPoint;
             currentPoint = addNewSection(currentPoint);
-            runSizes.push_back(currentPoint - startPoint + 1);
+            runSizes.push_back(currentPoint - startPoint);
         }
         if (currentPoint < n) {
             runSizes.push_back(1);
@@ -86,7 +86,7 @@ private:
     void insertionSort(int start, int end) {
         if ((end - start + 1) == 1) return;
 
-        for (int i = start + 1; i < (end - start + 1); ++i) {
+        for (int i = start + 1; i <= end; ++i) {
             if (compare(indexes[i - 1], indexes[i]) > 0) {
                 int step = i;
                 while (compare(indexes[step - 1], indexes[step]) > 0 && step != start) {
@@ -114,16 +114,18 @@ private:
         if (runSizes.size() < 2) return;
         std::vector<RUN> runs = getStackForMerge();
         while (runs.size() > 2) {
+            print(indexes);
             if (runs[0].runSize > (runs[1].runSize + runs[2].runSize) && (runs[1].runSize > runs[2].runSize)) {
                 mergeTwoSection(runs[0], runs[1]);
                 runs[0].runSize += runs[1].runSize;
-                //todo check valid
                 runs.erase(runs.begin() + 1);
             } else {
                 mergeTwoSection(runs[1], getMin(runs[0], runs[2]));
                 if (runs[0].runSize > runs[2].runSize) {
+                    runs[1].runSize += runs[2].runSize;
                     runs.erase(runs.begin() + 2);
                 } else {
+                    runs[0].runSize += runs[1].runSize;
                     runs.erase(runs.begin() + 1);
                 }
             }
@@ -136,21 +138,16 @@ private:
     }
 
     void mergeTwoSection(RUN p1, RUN p2) {
-        if (p1.startInArray > p2.startInArray) {
-            RUN tmp = p1;
-            p1 = p2;
-            p2 = tmp;
-        }
         int *tempIndexses = new int[p1.runSize];
-        for (int i = p1.startInArray, j = 0; i < p1.runSize; ++i, ++j) {
+        for (int i = p1.startInArray, j = 0; i < (p1.startInArray + p1.runSize); ++i, ++j) {
             tempIndexses[j] = indexes[i];
         }
         int i = 0, j = p2.startInArray, k = p1.startInArray;
-        while (i < p1.runSize && j < (p2.startInArray + p2.runSize)) {
+        while (i < (p1.startInArray + p1.runSize) && j < (p2.startInArray + p2.runSize)) {
             int compr = compare(tempIndexses[i], indexes[j]);
             switch (compr) {
                 case 1:
-                    indexes[k] = j;
+                    indexes[k] = indexes[j];
                     ++j;
                     break;
                 case -1:
@@ -158,14 +155,15 @@ private:
                     ++i;
                     break;
                 case 0:
-                    indexes[k++] = j;
+                    indexes[k++] = indexes[j];
                     indexes[k] = tempIndexses[i];
                     ++i;
                     ++j;
+                    break;
             }
             ++k;
         }
-        while (i < p1.runSize) {
+        while (i < (p1.startInArray + p1.runSize)) {
             indexes[k++] = tempIndexses[i++];
         }
         while (j < (p2.startInArray + p2.runSize)) {
@@ -197,12 +195,13 @@ public:
         createAndFillIndexes();
         minrun = getMinrun(n);
         defineRunSizes();
-//        mergeSort();
+        mergeSort();
 
         return indexes;
     }
 
     virtual int compare(int i1, int i2) = 0;
+    virtual void print(int *indexes) = 0;
 };
 
 
@@ -218,6 +217,30 @@ public:
         if (array[i1] == array[i2]) return 0;
         return array[i1] < array[i2] ? -1 : 1;
     }
+
+    void print(int *indexes) override {
+        std::cout << "\nРезультат: ";
+        for (int i = 0; i < n; ++i) {
+            std::cout << array[indexes[i]] << " ";
+        }
+    }
+
+    void updateArrayBySort(int *indexes) {
+        int *newArray = new int[n];
+        for (int i = 0; i < n; ++i) {
+            newArray[i] = array[indexes[i]];
+        }
+        array = newArray;
+    }
+
+    bool checkValidOfSort() {
+        for (int i = 1; i < n; ++i) {
+            if (compare(i - 1, i) > 0) {
+                return false;
+            }
+        }
+        return true;
+    }
 };
 
 class doubleTimsort : public Timsort {
@@ -231,5 +254,12 @@ public:
         if (i1 == i2) return 0;
         if ((array[i1] - array[i2]) < 0.000001) return 0;
         return array[i1] < array[i2] ? -1 : 1;
+    }
+
+    void print(int *indexes) override {
+        std::cout << "\nРезультат: ";
+        for (int i = 0; i < n; ++i) {
+            std::cout << array[indexes[i]] << " ";
+        }
     }
 };

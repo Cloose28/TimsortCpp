@@ -2,8 +2,8 @@
 #include "timsort.cpp"
 
 int main() {
-    int size = 10;
-    int array[] = {1, 5, 3, 4, 8, 8, 1, 2, 6, 6};
+    int size = 13;
+    int array[] = {1, 5, 3, 8, 7, 8, 1, 2, 6, 3, 1, 5, 3};
 
     intTimsort obj(size, array);
 
@@ -13,6 +13,7 @@ int main() {
     }
 
     int *indexes = obj.sort(size);
+    obj.updateArrayBySort(indexes);
     if (indexes == nullptr) {
         std::cout << "Здесь нечего сортировать!";
         return 0;
@@ -28,5 +29,10 @@ int main() {
         std::cout << array[indexes[i]] << " ";
     }
 
+    if (obj.checkValidOfSort()) {
+        std::cout << "\nСортировка успешна";
+    } else {
+        std::cout << "\nМассив не отсортирован";
+    }
     return 0;
 }
