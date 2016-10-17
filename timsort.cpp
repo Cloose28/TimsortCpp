@@ -7,7 +7,7 @@ class Timsort {
 private:
     int n;
     int minrun;
-    int *indexes;
+    std::vector<int> indexes;
     std::vector<int> runSizes;
 
     struct RUN {
@@ -21,16 +21,13 @@ private:
             r |= n & 1;
             n >>= 1;
         }
-        //n + r
-        return 2;
+        return n + r;
     }
 
     void createAndFillIndexes() {
-        int *indexes = new int[n];
         for (int i = 0; i < n; ++i) {
-            indexes[i] = i;
+            indexes.push_back(i);
         }
-        this->indexes = indexes;
     }
 
     void defineRunSizes() {
@@ -120,7 +117,11 @@ private:
                 runs[0].runSize += runs[1].runSize;
                 runs.erase(runs.begin() + 1);
             } else {
-                mergeTwoSection(runs[1], getMin(runs[0], runs[2]));
+                if (runs[0].runSize > runs[2].runSize) {
+                    mergeTwoSection(runs[1], runs[2]);
+                } else {
+                    mergeTwoSection(runs[0], runs[1]);
+                }
                 if (runs[0].runSize > runs[2].runSize) {
                     runs[1].runSize += runs[2].runSize;
                     runs.erase(runs.begin() + 2);
@@ -133,17 +134,13 @@ private:
         mergeTwoSection(runs[0], runs[1]);
     }
 
-    RUN getMin(RUN p1, RUN p2) {
-        return p1.runSize > p2.runSize ? p2 : p1;
-    }
-
     void mergeTwoSection(RUN p1, RUN p2) {
-        int *tempIndexses = new int[p1.runSize];
+        std::vector<int> tempIndexses;
         for (int i = p1.startInArray, j = 0; i < (p1.startInArray + p1.runSize); ++i, ++j) {
-            tempIndexses[j] = indexes[i];
+            tempIndexses.push_back(indexes[i]);
         }
         int i = 0, j = p2.startInArray, k = p1.startInArray;
-        while (i < (p1.startInArray + p1.runSize) && j < (p2.startInArray + p2.runSize)) {
+        while (i < p1.runSize && j < (p2.startInArray + p2.runSize)) {
             int compr = compare(tempIndexses[i], indexes[j]);
             switch (compr) {
                 case 1:
@@ -163,11 +160,11 @@ private:
             }
             ++k;
         }
-        while (i < (p1.startInArray + p1.runSize)) {
+        while (i < p1.runSize) {
             indexes[k++] = tempIndexses[i++];
         }
         while (j < (p2.startInArray + p2.runSize)) {
-            indexes[k++] = j++;
+            indexes[k++] = indexes[j++];
         }
     }
 
@@ -187,9 +184,7 @@ private:
 
 public:
 
-    int *sort(const int size) {
-        if (size < 2)
-            return nullptr;
+    std::vector<int> sort(const int size) {
         n = size;
 
         createAndFillIndexes();
@@ -201,7 +196,7 @@ public:
     }
 
     virtual int compare(int i1, int i2) = 0;
-    virtual void print(int *indexes) = 0;
+    virtual void print(std::vector<int> indexes) = 0;
 };
 
 
@@ -218,14 +213,14 @@ public:
         return array[i1] < array[i2] ? -1 : 1;
     }
 
-    void print(int *indexes) override {
+    void print(std::vector<int> indexes) override {
         std::cout << "\nРезультат: ";
         for (int i = 0; i < n; ++i) {
             std::cout << array[indexes[i]] << " ";
         }
     }
 
-    void updateArrayBySort(int *indexes) {
+    void updateArrayBySort(std::vector<int> indexes) {
         int *newArray = new int[n];
         for (int i = 0; i < n; ++i) {
             newArray[i] = array[indexes[i]];
@@ -256,7 +251,7 @@ public:
         return array[i1] < array[i2] ? -1 : 1;
     }
 
-    void print(int *indexes) override {
+    void print(std::vector<int> indexes) override {
         std::cout << "\nРезультат: ";
         for (int i = 0; i < n; ++i) {
             std::cout << array[indexes[i]] << " ";
